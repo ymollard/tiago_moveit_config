@@ -25,6 +25,7 @@ from launch.substitutions import LaunchConfiguration
 from dataclasses import dataclass
 from launch_pal.robot_arguments import CommonArgs
 from ament_index_python.packages import get_package_share_directory
+from launch_param_builder import ParameterBuilder
 
 
 @dataclass(frozen=True)
@@ -144,4 +145,23 @@ def start_move_group(context, *args, **kwargs):
         parameters=move_group_params,
     )
 
+    # Get parameters for the Servo node
+    servo_params = {
+        "moveit_servo": ParameterBuilder("tiago_moveit_config")
+        .yaml("config/servo.yaml")
+        .to_dict()
+    }
+
+    servo_node = Node(
+        package="moveit_servo",
+        executable="servo_node",
+        parameters=[
+            servo_params,
+            {"update_period": 0.01},
+            '',  # Should get the URDF from /robot_description
+            srdf_file_path,
+            robot_description_kinematics,
+        ],
+    )
+    
     return [run_move_group_node]
